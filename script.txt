@@ -1,0 +1,44 @@
+import os
+import time
+import random
+import RPi.GPIO as GPIO
+
+# Configurações de GPIO
+PIR_PIN = 7  # PINO do sensor PIR no Raspberry Pi (modifique se necessário)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(PIR_PIN, GPIO.IN)
+
+# Caminho dos áudios
+AUDIO_FOLDER = "/home/fabra/Desktop/audios"
+
+def play_random_audio():
+    # Lista de arquivos de áudio
+    audio_files = [f for f in os.listdir(AUDIO_FOLDER) if f.endswith('.mp3') or f.endswith('.wav')]
+    
+    # Escolhe um arquivo de áudio aleatoriamente
+    if audio_files:
+        audio_file = random.choice(audio_files)
+        audio_path = os.path.join(AUDIO_FOLDER, audio_file)
+        os.system(f'omxplayer "{audio_path}"')
+
+try:
+    print("Iniciando o sistema de detecção de movimento...")
+    while True:
+        # Verifica se o sensor detecta movimento
+        if GPIO.input(PIR_PIN):
+            print("Movimento detectado! Tocando áudio...")
+            play_random_audio()
+            
+            # Aguarda 30 segundos antes de verificar novamente
+            time.sleep(30)
+        else:
+            # Se não houver movimento, aguarda um momento antes de checar novamente
+            time.sleep(0.5)
+
+except KeyboardInterrupt:
+    print("Sistema interrompido manualmente")
+
+finally:
+    # Limpa as configurações GPIO ao finalizar
+    GPIO.cleanup()
+    print("Sistema finalizado")
