@@ -3,72 +3,59 @@ import time
 import random
 import RPi.GPIO as GPIO
 
-# Configurações de GPIO
-PIR_PIN = 7  # PINO do sensor PIR no Raspberry Pi (modifique se necessário)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(PIR_PIN, GPIO.IN)
+# Configuração do GPIO
+PIR_PIN = 7  # Altere para o pino onde o sensor está conectado no modo BOARD
+AUDIO_FOLDER = "/home/fabra/Desktop/audios"  # Pasta com arquivos de áudio
 
-# Caminho dos áudios
-AUDIO_FOLDER = "/home/fabra/Desktop/audios"
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(PIR_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 def play_random_audio():
-    # Lista de arquivos de áudio
+    """Função para tocar um áudio aleatório da pasta especificada"""
     audio_files = [f for f in os.listdir(AUDIO_FOLDER) if f.endswith('.mp3') or f.endswith('.wav')]
-    
-    # Escolhe um arquivo de áudio aleatoriamente
     if audio_files:
         audio_file = random.choice(audio_files)
         audio_path = os.path.join(AUDIO_FOLDER, audio_file)
-        os.system(f'omxplayer "{audio_path}"')
+        os.system(f'cvlc --play-and-exit "{audio_path}"')
 
-try:
-    print("Iniciando o sistema de detecção de movimento...")
-    while True:
-        # Verifica se o sensor detecta movimento
-        if GPIO.input(PIR_PIN):
-            print("Movimento detectado! Tocando áudio...")
-            play_random_audio()
-            
-            # Aguarda 30 segundos antes de verificar novamente
-            time.sleep(30)
-        else:
-            # Se não houver movimento, aguarda um momento antes de checar novamente
-            time.sleep(0.5)
-
-except KeyboardInterrupt:
-    print("Sistema interrompido manualmente")
-
-finally:
-    # Limpa as configurações GPIO ao finalizar
-    GPIO.cleanup()
-    print("Sistema finalizado")
-
-
-
-import RPi.GPIO as GPIO
-import time
-
-# Configuração do pino do sensor PIR
-PIR_PIN = 7  # Use o pino 7 no modo BOARD (ou GPIO 4 no modo BCM, se preferir)
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(PIR_PIN, GPIO.IN)
-
-try:
-    print("Testando o sensor PIR (pressione CTRL+C para sair)")
-    time.sleep(2)  # Tempo para o sensor estabilizar
+def test_sensor():
+    """Função para verificar se o sensor PIR está conectado e funcionando"""
+    print("Testando o sensor PIR...")
+    initial_state = GPIO.input(PIR_PIN)
+    print("Aguardando detecção de mudança de estado no sensor...")
+    start_time = time.time()
     
-    while True:
-        if GPIO.input(PIR_PIN):
-            print("Movimento detectado!")
-            time.sleep(1)  # Pequeno delay para evitar leituras muito rápidas
-        else:
-            print("Nenhum movimento detectado")
-            time.sleep(1)
+    # Aguarda mudança de estado ou timeout de 10 segundos
+    while time.time() - start_time < 10:
+        if GPIO.input(PIR_PIN) != initial_state:
+            print("Sensor PIR funcionando corretamente.")
+            return True
+        time.sleep(0.1)
+    
+    print("Erro: Sensor PIR não respondeu como esperado.")
+    return False
+
+try:
+    # Testa o sensor antes de iniciar a detecção contínua
+    if test_sensor():
+        print("Iniciando o sistema de detecção de movimento...")
+        time.sleep(2)  # Espera para estabilizar o sensor
+        
+        while True:
+            # Verifica se o sensor detecta movimento
+            if GPIO.input(PIR_PIN):
+                print("Movimento detectado! Tocando áudio...")
+                play_random_audio()
+                time.sleep(30)  # Aguarda 30 segundos antes de verificar novamente
+            else:
+                time.sleep(0.5)  # Atraso para evitar verificações muito frequentes
+
+    else:
+        print("Por favor, verifique o sensor PIR e as conexões.")
 
 except KeyboardInterrupt:
-    print("Teste interrompido pelo usuário")
+    print("Sistema interrompido pelo usuário.")
 
 finally:
     GPIO.cleanup()
-    print("GPIO limpo e script finalizado")
-
+    print("GPIO limpo e script finalizado.")
