@@ -42,3 +42,33 @@ finally:
     # Limpa as configurações GPIO ao finalizar
     GPIO.cleanup()
     print("Sistema finalizado")
+
+
+
+import RPi.GPIO as GPIO
+import time
+
+# Configuração do pino do sensor PIR
+PIR_PIN = 7  # Use o pino 7 no modo BOARD (ou GPIO 4 no modo BCM, se preferir)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(PIR_PIN, GPIO.IN)
+
+try:
+    print("Testando o sensor PIR (pressione CTRL+C para sair)")
+    time.sleep(2)  # Tempo para o sensor estabilizar
+    
+    while True:
+        if GPIO.input(PIR_PIN):
+            print("Movimento detectado!")
+            time.sleep(1)  # Pequeno delay para evitar leituras muito rápidas
+        else:
+            print("Nenhum movimento detectado")
+            time.sleep(1)
+
+except KeyboardInterrupt:
+    print("Teste interrompido pelo usuário")
+
+finally:
+    GPIO.cleanup()
+    print("GPIO limpo e script finalizado")
+
